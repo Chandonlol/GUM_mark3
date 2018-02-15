@@ -11,11 +11,9 @@ import sys
 ############################
 ## Some notes from Elif's Modifications to Parameter Fitting
 ##
-## *) We need to modify CFS.IMPORT_DATA which writes NiMnIn_Data to avoid
-##      assigning phase and magnetism (avoid human interpretation of data at this stage).
-##      This function should only summarize the results of DFT simulations compactly.
-##      For now I modified the NiMnIn_Data file the way I want it to appear
-##      but have not yet modified the function because I do not have Brian's directory.
+## *) I removed NiMnIn_Au from Brian's data directory, it was not tetragonal and doesn't work
+## *) it is finding some non-duplicate duplicates
+## *) first task should be to separate out the rules sums calculations from the post-processing -- first make the pp file, then calculate sums
 ##
 ## *) As implemented right now,
 ##      several parts of this code assume that the VASP POSCAR/CONTCAR always enter Ni,Mn,In in the
@@ -30,11 +28,6 @@ import sys
 ##
 ## *) Look at m_structure.py line 86 for minor question.
 ##
-## *) can I lose: BEG_rules, BEG.py, generate_FFCV_files.py
-##
-## *) I have not yet made sure the cluster and j rules are being calculated properly.  I also think we need
-##      to make it easy to change them to get the best possible description.
-##
 ## *) need to assess degree of overfitting in model using cross-validation in sklearn. Can we improve the model?
 ##
 ## *) When doing the fitting, is selecting an intercept a problem? cluster expansion model inherently
@@ -43,27 +36,25 @@ import sys
 ##      to include it.  But I think we do not.
 ##
 ## *) SEE if we can recover Brian's fit. Then do changes in line 100
-##
-##
 
-aust_tol = 0.025
+aust_tol = 0.01
 spin_style = ['threshold','threshold','threshold']  # options for spin_tol. Assuming [Ni Mn In]. choose 'threshold' or 'factor'
 spin_tol = [0.1,2,0]                                # insert spin parameters here, this assumes [Ni Mn In ]
 species = ['Ni','Mn','In']                          # this is the order that the post-processed data is reported, NEEDS TO BE Heusler format Ni2MnIn, Ni2FeGa.
 
-root_dir = '/Users/apple/Box Sync/memory alloy/Chendi_GUM_mark3/NiMnIn_Data_2'        # where the VASP directories are  #root_dir = '/Users/brian/Desktop/folder'
-vasp_data_file = './NiMnIn_Data'                    # generated in compile_vasp_structures>import_vasp, summarizes output of all VASP calculations
+root_dir = './NiMnIn_Vasp_Data'                     # where the VASP directories are  #root_dir = '/Users/brian/Desktop/folder'
+vasp_data_file = './NiMnIn_Data'               # generated in compile_vasp_structures>import_vasp, summarizes output of all VASP calculations
 vasp_data_file_pp = './NiMnIn_Data_pp'              # post-processed version of VASP results with spins, positions selected
 cluster_file = './Cluster_Rules'                    # cluster expansion rules
 j_file = './J_Rules'                                # heisenberg rules
-fitting_structures_file = './'
+#fitting_structures_file = './'
 
 # Determine what needs to be generated from scratch
-vasp_data_exists = False            # should be False if I want to regenrate files                 # summarize VASP results from VASP directories or no?
+vasp_data_exists = True                            # should be False if I want to regenrate files
 vasp_pp_exists = False                              # postprocessing of VASP results or no?
 Cluster_rules_exist = True                          # define cluster rules
 J_rules_exist = True                                # define heisenberg rules
-Js_exist = True                                     # results of fitting model
+#Js_exist = True                                     # results of fitting model
 
 # summarize VASP data
 if vasp_data_exists is False:                    # will make summary of VASP results if it doesn't already exist
@@ -81,7 +72,6 @@ J_rules = cmr.read_j_rules(j_file)
 # postprocess according to user selected parameters above and the cluster and j rules
 # calculation of sums and checking for duplicates occurs in here now
 # if a given structure is considered a duplicate then it is not added to the structure_list
-
 M_structures = ppv.generate_m_structure(vasp_data_file, len(Cluster_rules), len(J_rules), aust_tol, spin_style, spin_tol, Cluster_rules, J_rules)
 
 ppv.write_structures_processedvasp(M_structures,vasp_data_file_pp)
@@ -91,7 +81,7 @@ ppv.summarize_classification(M_structures)
 ppv.summarize_fitting_structures(M_structures)
 
 ## Ridge Regression Fitting with Regularization
-Js,intercept = cfp.ridge_simple(M_structures,1)
+Js,intercept = cfp.ridge_simple(M_structures,1,Cluster_rules,J_rules)
 cfp.write_fitting_parameters(M_structures, Cluster_rules, J_rules, Js, intercept, 200)
 cfp.plot_data3(M_structures,Cluster_rules,J_rules,Js,intercept,200)
 

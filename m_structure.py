@@ -36,7 +36,7 @@ def check_aust(Jscale,J_rule):
     if determine <= 1 and determine >= 0.9:
         return "fm"
     elif determine >= -1 and determine <= -0.9:
-            return "afm"
+        return "afm"
     else:
         return 0
 
@@ -55,17 +55,23 @@ def check_mart(Jscale,J1,J2):
 class MStructureObj:
     def __init__(self, data, species, num_cluster_rules, num_j_rules, aust_tol):
         data = data.split()
+        #print(data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7])
         self.num_cluster_rules = num_cluster_rules
         self.num_j_rules = num_j_rules
         self.species = species
         itter = 0
-        self.composition = [0] * (len(species)-1)
+        self.composition = [0] * (len(species))
         self.num_Atoms = 0
-        for i in range(len(species)-1):
+        #print('length of species is ',len(species))
+        for i in range(len(species)):
+            #print('itter is ',itter)
             self.num_Atoms += int(data[itter])
+            #print('just added ',int(data[itter]),', current total number of atoms is ',self.num_Atoms)
             self.composition[i] = int(data[itter])
             itter += 1
+        #print('number of atoms is ',self.num_Atoms)
         self.name = data[itter]
+        #print(self.name)
         self.enrg = float(data[itter + 1])
         a = float(data[itter + 2])
         b = float(data[itter + 3])
@@ -88,6 +94,7 @@ class MStructureObj:
 
     def set_atom_properties(self, index, atom_data, spin_style, spin_tol):
         atom_data = atom_data.split()
+        #print(atom_data[0], atom_data[1])
         mag = float(atom_data[1])
         #print("atom number ",index," , magnetization is ",mag)
         pos = [round(float(atom_data[2]), 5), round(float(atom_data[3]), 5), round(float(atom_data[4]), 5)]
@@ -148,23 +155,23 @@ class MStructureObj:
         for i in range(len(J_rules)):
             J_rule = J_rules[i]
             name = ''.join(J_rule.name.split())
-            if name == "J1b0":
+            if name == "mag-2NN-MnMn-Aust":
                 J1b0 = i
-            elif name == "J1bU":
+            elif name == "mag-2NN-MnMn-Mart-IN":
                 J1bU = i
-            elif name == "J2bU":
+            elif name == "mag-2NN-MnMn-Mart-OUT":
                 J2bU = i
-            elif name == "J1c0":
+            elif name == "mag-3NN-MnMn-Aust":
                 J1c0 = i
-            elif name == "J1cU":
+            elif name == "mag-3NN-MnMn-Mart-IN":
                 J1cU = i
-            elif name == "J2cU":
+            elif name == "mag-3NN-MnMn-Mart-OUT":
                 J2cU = i
 
         Jsums = self.J_sums
         mnmncounts = self.mnmn_count
         Jscale = []
-        # for each m_structure, get the j_sum scaled by number of Mg-Mg bonds
+        # for each m_structure, get the j_sum scaled by number of Mn-Mn bonds
         for j in range(len(mnmncounts)):
             mnmncount = mnmncounts[j]
             if mnmncount == 0:
@@ -174,7 +181,7 @@ class MStructureObj:
         # print(Jscale)
         # step 1: check if all 0
         if (all( v >= -0.1 and v <= 0.1 for v in Jscale)):
-            self.mag_phase = "NA"
+            self.mag_phase = "sd"
         else:
             #step 2: if it is austinite
             if self.phase_name == "aust":
